@@ -19,8 +19,8 @@
     
     }
     </style>
-    <script type="module" crossorigin src="/assets/index-6c6ea9dc.js"></script>
-    <link rel="stylesheet" href="/assets/index-c09d93f7.css">
+    <script type="module" crossorigin src="/assets/index-ef4d7f0e.js"></script>
+    <link rel="stylesheet" href="/assets/index-67fec466.css">
   </head>
   <body>
     <div id="app"></div>

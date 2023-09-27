@@ -2,13 +2,13 @@
   <div>
     <!-- As a heading -->
     <nav
-      class="navbar navbar-expand-lg fixed-top"
-      style="background-color: rgba(0, 0, 0, 0.1)"
+      class="navbar navbar-expand-lg fixed-top custom-color"
+      style="background-color: rgb(83,134,179)"
     >
-      <div class="container">
+      <div class="container justify-content-center justify-content-lg-start">
         <router-link
           :to="{ name: 'home' }"
-          class="nav-link active navbar-brand fs-3"
+          class="nav-link active navbar-brand fs-3 la"
           aria-current="page"
         >
           <img
@@ -16,6 +16,7 @@
             alt=""
             width="220"
             height="80"  
+            class="image-logo"
           />
         </router-link>
       </div>
@@ -57,7 +58,12 @@
 
 @media screen and (max-width: 767px){
   .navbar-brand{
-    margin-left: 100px !important;
+    text-align: center;
+  }
+
+  .image-logo{
+    width: 130px;
+    height:50px
   }
 }
 </style>

@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted, computed } from "vue";
-import api from "../api";
-import axios from "axios";
+import { offlineApi, api } from '../api';
 import { useRouter, useRoute } from "vue-router";
 
 const router = useRouter();
@@ -84,8 +83,8 @@ const updateForm = async () => {
 
     // If an error occurs, run an alternative POST request using Axios
     try {
-      const axiosResponse = await axios.post(
-        `http://localhost:8000/api/venues/${route.params.id}`,
+      const axiosResponse = await offlineApi.post(
+        `/api/venues/${route.params.id}`,
         formData
       );
       // Handle the Axios response here as needed
@@ -136,8 +135,8 @@ const fetchData = async () => {
 
     // If an error occurs, run an alternative GET request using Axios
     try {
-      const axiosResponse = await axios.get(
-        `http://localhost:8000/api/venues/${route.params.id}`
+      const axiosResponse = await offlineApi.get(
+        `/api/venues/${route.params.id}`
       );
       // Handle the Axios response here as needed
       let responseData = axiosResponse.data.data; // Extract data from the response

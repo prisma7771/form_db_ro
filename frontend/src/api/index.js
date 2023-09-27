@@ -1,10 +1,12 @@
-//import axios
+// offlineApi.js
 import axios from 'axios';
 
-const Api = axios.create({
-    //set default endpoint API
-    // baseURL: 'http://localhost:8000'
-    baseURL: 'http://192.168.186.124:8000'
-})
+const offlineApi = axios.create({
+    baseURL: 'http://localhost:8000'
+});
 
-export default Api
+const api = axios.create({
+    baseURL: 'http://192.168.186.124:8000'
+});
+
+export { offlineApi, api };

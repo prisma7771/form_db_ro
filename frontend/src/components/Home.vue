@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted, computed } from "vue";
-import api from "../api";
-import axios from "axios";
+import { offlineApi, api } from '../api';
 import * as XLSX from "xlsx";
 
 const data = ref([]);
@@ -19,7 +18,7 @@ const fetchData = async () => {
     console.error("Error fetching data:", error);
     // If an error occurs, run an alternative request using Axios
     try {
-      const axiosResponse = await axios.get("http://localhost:8000/api/venues");
+      const axiosResponse = await offlineApi.get("/api/venues");
       console.log(axiosResponse);
       data.value = axiosResponse.data.data;
       // Handle the response from Axios here
@@ -58,7 +57,7 @@ const deleteVenue = async (venueId, nama_venue) => {
 
     // If an error occurs, run an alternative delete request using Axios
     try {
-      const axiosResponse = await axios.delete(`http://localhost:8000/api/venues/${venueId}`);
+      const axiosResponse = await offlineApi.delete(`/api/venues/${venueId}`);
       // Handle the Axios response here as needed
       if (axiosResponse.status === 200) {
       window.alert(nama_venue + " Deleted");

@@ -1,8 +1,7 @@
 <script setup>
 import { useRoute } from "vue-router";
 import { ref, onMounted, computed } from "vue";
-import api from "../api";
-import axios from "axios";
+import { offlineApi, api } from '../api';
 import html2pdf from "html2pdf.js";
 
 const route = useRoute();
@@ -37,9 +36,9 @@ const fetchData = async () => {
 
     // If an error occurs, run an alternative request using Axios
     try {
-      const axiosResponse1 = await axios.get(`http://localhost:8000/api/venues/${route.params.id}`);
+      const axiosResponse1 = await offlineApi.get(`/api/venues/${route.params.id}`);
       data.value = axiosResponse1.data.data;
-      const axiosResponse2 = await axios.get(`http://localhost:8000/api/images/${route.params.id}`);
+      const axiosResponse2 = await offlineApi.get(`/api/images/${route.params.id}`);
       images.value = axiosResponse2.data.data.images;
       columns.value = chunkArray(images.value, 3);
     } catch (axiosError) {
@@ -116,8 +115,8 @@ const storePost = async () => {
 
     // If an error occurs, run an alternative post request using Axios
     try {
-      const axiosResponse = await axios.post(
-        "http://localhost:8000/api/images",
+      const axiosResponse = await offlineApi.post(
+        "/api/images",
         formData2
       );
       // Handle the Axios response here as needed
@@ -153,7 +152,7 @@ const delImage = async (id) => {
 
     // If an error occurs, run an alternative delete request using Axios
     try {
-      const axiosResponse4 = await axios.delete(`http://localhost:8000/api/images/${id}`);
+      const axiosResponse4 = await offlineApi.delete(`/api/images/${id}`);
       if (axiosResponse4.status === 200) {
       window.alert(id + "Image Deleted");
       const updatedData = images.value.filter((image) => image.id_image !== id);

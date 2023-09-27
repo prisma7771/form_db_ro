@@ -1,7 +1,6 @@
 <script setup>
 import { ref } from "vue";
-import api from "../api";
-import axios from "axios";
+import { offlineApi, api } from '../api';
 import { useRouter, useRoute } from 'vue-router';
 
 const router = useRouter();
@@ -80,7 +79,7 @@ const submitForm = async () => {
 
     // If an error occurs, run an alternative post request using Axios
     try {
-      await axios.post("http://localhost:8000/api/venues", formData);
+      await offlineApi.post("/api/venues", formData);
       // Redirect upon success
       router.push({ path: "/" });
     } catch (axiosError) {

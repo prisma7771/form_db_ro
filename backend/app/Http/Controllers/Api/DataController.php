@@ -37,7 +37,6 @@ class DataController extends Controller
         $request->validate([
             'venue.nama_venue' => 'required|string',
             // Add validation rules for other venue fields as needed
-            'spot.total_spot' => 'required|integer',
             'spot.spot_name' => 'required|string',
             // Add validation rules for other spot fields as needed
         ]);
@@ -66,56 +65,44 @@ class DataController extends Controller
         $request->validate([
             'venue.nama_venue' => 'required|string',
             // Add validation rules for other venue fields as needed
-            'spot.spot_name' => 'required|string',
-            // Add validation rules for other spot fields as needed
         ]);
-
-        // Find the existing Venue record by ID
-        $venue = Venue::findOrFail($id);
 
         // Update the Venue attributes with the new data
         $venue->update($request->input('venue'));
 
-        // Update the associated Spot records where id_venue matches $id
-        $spots = Spot::where('id_venue', $id)->update($request->input('spot'));
-
         // Return a response indicating success
-        return new DataResource(true, 'Upload Data Item!', $spots);
+        return new DataResource(true, 'Upload Data Item!', $venue);
     }
 
     public function destroy($id)
-{
-    // Find the Venue by ID
-    $venue = Venue::find($id);
+    {
+        // Find the Venue by ID
+        $venue = Venue::find($id);
 
-    // Check if the venue exists
-    if (!$venue) {
-        return new DataResource(false, 'Venue not found.');
+        // Check if the venue exists
+        if (!$venue) {
+            return new DataResource(false, 'Venue not found.');
+        }
+
+        // Get all images associated with venue id 1
+        $images = Image::where('id_venue', $id)->get();
+
+        // Loop through the images and delete each one
+        foreach ($images as $image) {
+            // Delete the image file
+            Storage::delete('public/posts/' . basename($image->image));
+
+            // Update the associated Spot records where id_venue matches $id
+            $image = Image::where('id_venue', $id)->delete();
+        }
+
+        // Delete the associated spots first
+        $venue->spots()->delete();
+
+        // Then delete the venue
+        $venue->delete();
+
+        // Return a response indicating success
+        return new DataResource(true, 'Venue and associated images removed successfully.', $id);
     }
-
-    // Get all images associated with venue id 1
-    $images = Image::where('id_venue', $id)->get();
-
-    // Loop through the images and delete each one
-    foreach ($images as $image) {
-        // Delete the image file
-        Storage::delete('public/posts/' . basename($image->image));
-
-        // Update the associated Spot records where id_venue matches $id
-        $image= Image::where('id_venue', $id)->delete();
-
-    }
-
-    // Delete the associated spots first
-    $venue->spots()->delete();
-    
-    // Then delete the venue
-    $venue->delete();
-
-    // Return a response indicating success
-    return new DataResource(true, 'Venue and associated images removed successfully.', $id);
-}
-
-
-
 }

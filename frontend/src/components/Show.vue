@@ -1,14 +1,18 @@
 <script setup>
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { ref, onMounted, computed } from "vue";
-import { offlineApi, api } from '../api';
+import { offlineApi, api } from "../api";
 import html2pdf from "html2pdf.js";
 
+import spotCard from "./spotCard/spotCard.vue";
+
 const route = useRoute();
+const router = useRouter();
 const data = ref({});
 const images = ref({});
 const columns = ref([]);
 const loading = ref(true);
+const selectedSpotIndex = ref(0);
 
 let id_venue = ref(route.params.id);
 let image = ref("");
@@ -32,28 +36,61 @@ const fetchData = async () => {
     loading.value = false;
   } catch (error) {
     console.error("Error fetching data:", error);
-    loading.value = false;
-
     // If an error occurs, run an alternative request using Axios
     try {
-      const axiosResponse1 = await offlineApi.get(`/api/venues/${route.params.id}`);
+      const axiosResponse1 = await offlineApi.get(
+        `/api/venues/${route.params.id}`
+      );
       data.value = axiosResponse1.data.data;
-      const axiosResponse2 = await offlineApi.get(`/api/images/${route.params.id}`);
-      images.value = axiosResponse2.data.data.images;
-      columns.value = chunkArray(images.value, 3);
+
+      const axiosResponse2 = await offlineApi.get(
+        `/api/images/${route.params.id}`
+      );
+      if (axiosResponse2.data && axiosResponse2.data.data) {
+        images.value = axiosResponse2.data.data.images;
+        columns.value = chunkArray(images.value, 3);
+        loading.value = false;
+      } else {
+        console.error("No image data found in the offline response.");
+      }
     } catch (axiosError) {
       console.error("Error fetching data with Axios:", axiosError);
     }
   }
+
+  console.log(data.value.spots[0]);
 };
 
+const confirmDelete = (id, nama_venue) => {
+  const confirmed = window.confirm(
+    "Are you sure you want to delete " + nama_venue + id + "?"
+  );
+  // console.log(confirmed); // Log the result of the confirmation
 
-const formattedCurrency = (item) => {
-  const RP = item;
-  if (!isNaN(RP)) {
-    return `Rp ${RP.toFixed(0).replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.")}`;
+  if (confirmed) {
+    // Proceed with the deletion by calling deleteVenue
+    deleteVenue(id, nama_venue);
   }
-  return RP;
+};
+
+const deleteVenue = async (id, nama_venue) => {
+  try {
+    const response = await api.delete(`/api/venues/${id}`);
+    // Redirect upon success
+    router.push({ path: "/" });
+  } catch (error) {
+    console.error("Error deleting spot:", error);
+
+    // If an error occurs, run an alternative delete request using Axios
+    try {
+      const axiosResponse = await offlineApi.delete(`/api/venues/${id}`);
+      // Redirect upon success
+    router.push({ path: "/" });
+      // Handle the Axios response here as needed
+    } catch (axiosError) {
+      console.error("Error deleting spot with Axios:", axiosError);
+    }
+  }
 };
 
 const generatePDF = async () => {
@@ -73,9 +110,18 @@ const displayValue = (value) => {
   return value ? value : "-";
 };
 
+const formattedCurrency = (item) => {
+  const RP = item;
+  if (!isNaN(RP)) {
+    return `Rp ${RP.toFixed(0).replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.")}`;
+  }
+  return RP;
+};
+
 const formattedPhoneNumber = computed(() =>
   formatPhoneNumber(data.value.no_cp)
 );
+
 const whatsappLink = computed(
   () => `https://wa.me/${formattedPhoneNumber.value}`
 );
@@ -90,6 +136,11 @@ const formatPhoneNumber = (phoneNumber) => {
     }
   }
   return phoneNumber;
+};
+
+const selectSpot = (index) => {
+  selectedSpotIndex.value = index;
+  console.log(selectedSpotIndex.value);
 };
 
 const handleFileChange = (e) => {
@@ -115,10 +166,7 @@ const storePost = async () => {
 
     // If an error occurs, run an alternative post request using Axios
     try {
-      const axiosResponse = await offlineApi.post(
-        "/api/images",
-        formData2
-      );
+      const axiosResponse = await offlineApi.post("/api/images", formData2);
       // Handle the Axios response here as needed
       const image_url = axiosResponse.data.data.image;
       const newImage = {
@@ -154,22 +202,23 @@ const delImage = async (id) => {
     try {
       const axiosResponse4 = await offlineApi.delete(`/api/images/${id}`);
       if (axiosResponse4.status === 200) {
-      window.alert(id + "Image Deleted");
-      const updatedData = images.value.filter((image) => image.id_image !== id);
-      images.value = updatedData;
-      columns.value = [];
-      columns.value = chunkArray(images.value, 3);
-      console.log(response4);
-    } else {
-      console.error("Error deleting image:", response4.statusText);
-    }
+        window.alert(id + "Image Deleted");
+        const updatedData = images.value.filter(
+          (image) => image.id_image !== id
+        );
+        images.value = updatedData;
+        columns.value = [];
+        columns.value = chunkArray(images.value, 3);
+        console.log(response4);
+      } else {
+        console.error("Error deleting image:", response4.statusText);
+      }
       // Handle the Axios response here as needed
     } catch (axiosError) {
       console.error("Error deleting image with Axios:", axiosError);
     }
   }
 };
-
 
 const chunkArray = (array, chunkCount) => {
   const chunkedArray = Array.from({ length: chunkCount }, () => []);
@@ -203,15 +252,31 @@ const closeCarousel = () => {
   <div class="container">
     <div class="row pdf-bg" id="pdf-content">
       <div class="col-md-12">
-        <h1 class="text-center my-4">Detail Venue</h1>
+        <h1 class="text-center my-3">Detail Venue</h1>
+        <div class="d-flex justify-content-end my-2">
+          <router-link
+            :to="{ name: 'addSpot', params: { id: data.id } }"
+            tag="button"
+            class="btn btn-success btn-responsive mx-2"
+          >
+            Add Spot
+          </router-link>
+          <button
+            type="button"
+            class="btn btn-danger btn-responsive"
+            @click="confirmDelete(data.id, data.nama_venue)"
+          >
+            Delete Venue
+          </button>
+        </div>
         <div
-          class="card bg-dark border-0 rounded shadow text-white mb-5"
+          class="card bg-dark border-0 rounded shadow text-white mb-3"
           style="--bs-bg-opacity: 0.25"
         >
           <div class="card-body">
             <div v-if="loading">Loading...</div>
             <div v-else>
-              <div id="title" class="mb-5">
+              <div id="title" class="mb-4">
                 <h2 class="text-center">{{ data.nama_venue }}</h2>
                 <h5 class="text-center">
                   {{ data.cp_marketing }}
@@ -225,12 +290,12 @@ const closeCarousel = () => {
                 </h5>
               </div>
               <section id="location" class="mb-3">
-                <div class="col-md-6">
+                <div class="col-lg-6 px-2">
                   <div class="row align-items-center mb-3">
-                    <div class="col-3"><strong>Address</strong></div>
-                    <div class="col-1">:</div>
+                    <div class="col-lg-3"><strong>Address</strong></div>
+                    <div class="col-1 d-none d-lg-block">:</div>
                     <div
-                      class="col-8 bg-white opacity-50 text-black rounded lh-lg"
+                      class="col-lg-8 bg-white opacity-50 text-black rounded lh-lg"
                     >
                       {{ displayValue(data.address) }}
                     </div>
@@ -238,9 +303,9 @@ const closeCarousel = () => {
 
                   <div class="row align-items-center">
                     <div class="col-3"><strong>Area</strong></div>
-                    <div class="col-1">:</div>
+                    <div class="col-1 d-none d-lg-block">:</div>
                     <div
-                      class="col-8 bg-white opacity-50 text-black rounded lh-lg"
+                      class="col-lg-8 bg-white opacity-50 text-black rounded lh-lg"
                     >
                       {{ displayValue(data.area) }}
                     </div>
@@ -251,176 +316,29 @@ const closeCarousel = () => {
                 <div class="text-bg fs-3 fw-bold">SPOT VENUE</div>
               </div>
               <!-- Start of Section Spot -->
-              <section id="spot" class="mb-5">
-                <div class="col-md-12">
-                  <div class="row">
-                    <div class="col-lg-8 col-sm-12">
-                      <div class="row align-items-center mb-3">
-                        <div class="col-2">
-                          <strong>Nama Spot</strong>
-                        </div>
-                        <div class="col-1">:</div>
-                        <div
-                          class="col-8 bg-white opacity-50 text-black rounded lh-lg"
-                        >
-                          {{ data.spots[0].spot_name }}
-                        </div>
-                      </div>
-                    </div>
-                    <div class="col-lg-4 col-sm-12">
-                      <div class="row align-items-center mb-3">
-                        <div class="col-lg-5 col-3">
-                          <strong>Kapasitas</strong>
-                        </div>
-                        <div class="col-1">:</div>
-                        <div
-                          class="col-5 bg-white opacity-50 text-black rounded lh-lg"
-                        >
-                          {{ data.spots[0].kapasitas }}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
 
-                  <!-- list Fasilitas -->
+              <div class="d-flex gap-2 justify-content-center">
+                <div
+                  v-for="(spot, index) in data.spots"
+                  :key="spot.spot_id"
+                  @click="selectSpot(spot.spot_id)"
+                  class="p-2 tagSelect mb-3 text-center align-middle"
+                  :class="{ active_spot: spot.spot_id == selectedSpotIndex }"
+                  style="cursor: pointer; display: flex; flex-direction: column; align-items: center;"
+ 
+                >
+                <span>{{ spot.spot_name }}</span>
                 </div>
-                <div class="row">
-                  <div class="col-lg-8 col-12">
-                    <div class="row align">
-                      <div class="col-lg-2 col-3">
-                        <strong>Fasilitas</strong>
-                      </div>
-                      <div class="col-1">:</div>
-                      <div class="col-lg-3 col-5">
-                        <ul class="custom-list">
-                          <li>Kursi</li>
-                          <li>R. Meeting</li>
-                          <li>Genset</li>
-                          <li>Sound System</li>
-                          <li>R. Makeup</li>
-                          <li>Modul Panggung</li>
-                          <li>R. Transit</li>
-                          <li>Listrik</li>
-                        </ul>
-                      </div>
-                      <div class="col-lg-5 col-3">
-                        <ul class="custom-list2">
-                          <li
-                            class="bg-white opacity-50 text-black rounded px-2"
-                          >
-                            {{ data.spots[0].kursi }}
-                          </li>
-                          <li
-                            class="bg-white opacity-50 text-black rounded px-2"
-                          >
-                            {{ data.spots[0].r_meeting }}
-                          </li>
-                          <li
-                            class="bg-white opacity-50 text-black rounded px-2"
-                          >
-                            {{ data.spots[0].genset }}
-                          </li>
-                          <li
-                            class="bg-white opacity-50 text-black rounded px-2"
-                          >
-                            {{ data.spots[0].sound_system }}
-                          </li>
-                          <li
-                            class="bg-white opacity-50 text-black rounded px-2"
-                          >
-                            {{ data.spots[0].r_makeup }}
-                          </li>
-                          <li
-                            class="bg-white opacity-50 text-black rounded px-2"
-                          >
-                            {{ data.spots[0].m_panggung }}
-                          </li>
-                          <li
-                            class="bg-white opacity-50 text-black rounded px-2"
-                          >
-                            {{ data.spots[0].r_transit }}
-                          </li>
-                          <li
-                            class="bg-white opacity-50 text-black rounded px-2"
-                          >
-                            {{ data.spots[0].listrik }}
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                    <div class="row">
-                      <div class="col-12">
-                        <div class="row align-items-center mb-3">
-                          <div class="col-lg-3 col-4"></div>
-                          <div class="col-lg-2 col-3">Lain-Lain</div>
-                          <div
-                            class="col-lg-6 col-5 bg-white opacity-50 text-black rounded px-2 lh-lg"
-                          >
-                            {{ data.spots[0].other_fac }}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="row">
-                      <div class="col-12">
-                        <div class="row mt-5">
-                          <div class="col-lg-2 col-3">
-                            <strong>Harga</strong>
-                          </div>
-                          <div class="col-1">:</div>
-                          <div class="col-lg-3 col-5">
-                            <ul class="custom-list">
-                              <li>Halfday</li>
-                              <li>Fullday</li>
-                            </ul>
-                          </div>
-                          <div class="col-lg-5 col-3">
-                            <ul class="custom-list2">
-                              <li
-                                class="bg-white opacity-50 text-black rounded px-2"
-                              >
-                                {{ formattedCurrency(data.spots[0].halfday) }}
-                              </li>
-                              <li
-                                class="bg-white opacity-50 text-black rounded px-2"
-                              >
-                                {{ formattedCurrency(data.spots[0].fullday) }}
-                              </li>
-                            </ul>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="row">
-                      <div class="col-12">
-                        <div class="row align-items-center mb-3">
-                          <div class="col-lg-3 col-4"></div>
-                          <div class="col-lg-2 col-3">Lain-Lain</div>
-                          <div
-                            class="col-lg-6 col-5 bg-white opacity-50 text-black rounded px-2 lh-lg"
-                          >
-                            {{ displayValue(data.spots[0].other_harga) }}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+              </div>
 
-                  <div class="col-lg-4">
-                    <div class="row align-items-center mb-3">
-                      <div class="col-lg-5 col-4">
-                        <strong>Indoor/Outdoor</strong>
-                      </div>
-                      <div class="col-1">:</div>
-                      <div
-                        class="col-lg-5 col-7 bg-white opacity-50 text-black rounded lh-lg"
-                      >
-                        {{ displayValue(data.spots[0].indoor_outdoor) }}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </section>
+              <div v-for="(spot, index) in data.spots">
+                <spot-card
+                  :key="spot.spot_id"
+                  v-if="selectedSpotIndex == spot.spot_id"
+                  :data="spot"
+                ></spot-card>
+              </div>
+
               <!-- End of Section Spot -->
 
               <div class="separator my-5">
@@ -428,24 +346,24 @@ const closeCarousel = () => {
               </div>
 
               <!-- Start of Section Kamar -->
-              <div class="col-lg-8">
+              <div class="col-lg-8 px-2">
                 <div class="row align-items-center mb-3">
-                  <div class="col-lg-2 col-3">
+                  <div class="col-lg-2">
                     <strong>Harga/Pack</strong>
                   </div>
-                  <div class="col-1">:</div>
+                  <div class="col-1 d-none d-lg-block">:</div>
                   <div
-                    class="col-8 bg-white opacity-50 text-black rounded lh-lg"
+                    class="col-lg-8 bg-white opacity-50 text-black rounded lh-lg"
                   >
                     {{ formattedCurrency(data.harga_pack) }}
                   </div>
                 </div>
                 <div class="row align-items-center mb-3">
                   <div class="col-lg-3"></div>
-                  <div class="col-lg-2 col-3">Lain-Lain</div>
-                  <div class="col-1">:</div>
+                  <div class="col-lg-2">Lain-Lain</div>
+                  <div class="col-1 d-none d-lg-block">:</div>
                   <div
-                    class="col-lg-5 col-8 bg-white opacity-50 text-black rounded lh-lg"
+                    class="col-lg-5 bg-white opacity-50 text-black rounded lh-lg"
                   >
                     {{ displayValue(data.lain_lain) }}
                   </div>
@@ -458,15 +376,15 @@ const closeCarousel = () => {
               </div>
 
               <!-- Start of Secttion Charge -->
-              <div class="row">
+              <div class="row px-2">
                 <div class="col-lg-8">
                   <div class="row align-items-center mb-3">
-                    <div class="col-lg-2 col-3">
+                    <div class="col-lg-2">
                       <strong>Charge</strong>
                     </div>
-                    <div class="col-1">:</div>
+                    <div class="col-1 d-none d-lg-block">:</div>
                     <div
-                      class="col-8 bg-white opacity-50 text-black rounded lh-lg"
+                      class="col-lg-8 bg-white opacity-50 text-black rounded lh-lg"
                     >
                       {{ formattedCurrency(data.charge) }}
                     </div>
@@ -479,11 +397,11 @@ const closeCarousel = () => {
         </div>
       </div>
     </div>
-    <div class="d-none d-lg-flex flex-row-reverse m-3">
+    <div class="d-flex flex-row-reverse m-2">
       <button
         @click="generatePDF"
         type="button"
-        class="btn btn-success btn-responsive"
+        class="btn btn-success btn-responsive d-none d-lg-block"
       >
         Generate PDF
       </button>
@@ -502,7 +420,7 @@ const closeCarousel = () => {
       <div class="card-body">
         <h1 class="text-center">Image</h1>
         <form @submit.prevent="storePost()">
-          <div class="col-3 mb-3">
+          <div class="col-lg-3 mb-3">
             <label class="form-label fw-bold">Image</label>
             <input
               type="file"
@@ -568,7 +486,7 @@ const closeCarousel = () => {
                 <div
                   class="carousel-item"
                   v-for="(item, index) in images"
-                  :class="{ active: item.id_image == activeVenueId }"
+                  :class="{ active_spot: item.id_image == activeVenueId }"
                   :key="index"
                 >
                   <img :src="item.image" class="d-block w-100" alt="..." />
@@ -607,6 +525,17 @@ const closeCarousel = () => {
 </template>
 
 <style scoped>
+.tagSelect {
+  background-color: gray;
+  border: 1px solid black;
+  border-radius: 15px;
+}
+
+.tagSelect.active_spot {
+  background-color: black;
+  color: white;
+}
+
 .pdf-bg {
   font-family: "Quicksand", sans-serif;
 }
@@ -646,46 +575,6 @@ const closeCarousel = () => {
   width: 2em;
   height: 2em;
   z-index: 999;
-}
-
-/* Custom list style */
-.custom-list {
-  list-style-type: none; /* Remove the default list-style-type */
-  padding-left: 0; /* Remove default left padding */
-}
-
-/* Custom list item style */
-.custom-list li {
-  position: relative;
-  padding-left: 2em; /* Adjust padding for spacing between text and square */
-  line-height: 2;
-  margin: 10px 0; /* Adjust line height as needed */
-}
-
-/* Custom list item square */
-.custom-list li::before {
-  content: "\25A0"; /* Unicode character for a solid square */
-  position: absolute;
-  left: 0;
-  top: 0.1em; /* Adjust this value to align the square with text */
-  font-size: inherit; /* Use the same font size as the parent element */
-}
-
-/* Second custom list style */
-.custom-list2 {
-  list-style-type: none; /* Remove the default list-style-type */
-  padding-left: 0; /* Remove default left padding */
-}
-
-/* Second custom list item style */
-.custom-list2 li {
-  position: relative;
-  padding-left: 1em; /* Adjust padding for spacing between text and square */
-  line-height: 2;
-  margin: 10px; /* Adjust line height as needed */
-}
-.file-input-card {
-  width: 300px; /* Adjust the card width as needed */
 }
 
 .image-gallery {

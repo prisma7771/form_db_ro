@@ -14,7 +14,6 @@ class Spot extends Model
 
     protected $fillable = [
         'id_venue',
-        'total_spot',
         'spot_name',
         'kapasitas',
         'indoor_outdoor',
@@ -30,6 +29,7 @@ class Spot extends Model
         'halfday',
         'fullday',
         'other_harga',
+        'id_spot'
     ];
 
     // Define a relationship to the Venue model

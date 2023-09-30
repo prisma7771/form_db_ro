@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\api\DataController;
+use App\Http\Controllers\api\SpotController;
 use App\Http\Controllers\api\ImageController;
 
 
@@ -19,3 +20,4 @@ use App\Http\Controllers\api\ImageController;
 
 Route::apiResource('/venues', App\Http\Controllers\Api\DataController::class);
 Route::apiResource('/images', App\Http\Controllers\Api\ImageController::class);
+Route::apiResource('/spots', App\Http\Controllers\Api\SpotController::class);

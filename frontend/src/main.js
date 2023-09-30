@@ -13,6 +13,8 @@ import Home from "./components/Home.vue";
 import Create from "./components/Create.vue";
 import Show from "./components/Show.vue";
 import Edit from "./components/Edit.vue";
+import addSpot from "./components/spotCard/addSpot.vue";
+import editSpot from "./components/spotCard/editSpot.vue";
 
 const routes = [
   {
@@ -34,7 +36,18 @@ const routes = [
     path: "/edit/:id",
     name: "edit",
     component: Edit,
+  },
+  {
+    path: "/addSpot/:id",
+    name: "addSpot",
+    component: addSpot,
+  },
+  {
+    path: "/editSpot/:id/:idS",
+    name: "editSpot",
+    component: editSpot,
   }
+  
   //   { path: '/about', component: About }
 ];
 

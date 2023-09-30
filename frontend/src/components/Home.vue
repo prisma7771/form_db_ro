@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, computed } from "vue";
-import { offlineApi, api } from '../api';
+import { offlineApi, api } from "../api";
 import * as XLSX from "xlsx";
 
 const data = ref([]);
@@ -9,18 +9,70 @@ const inSelect = ref("");
 const searchText = ref("");
 const areaSelect = ref("");
 
+let rows = ref([]);
+
 const fetchData = async () => {
   try {
     const response = await api.get("/api/venues");
     data.value = response.data.data;
-    console.log(response)
+    data.value.forEach((venue) => {
+      venue.spots.forEach((spot) => {
+        rows.value.push({
+          venue: {
+            id: venue.id,
+            nama_venue: venue.nama_venue,
+            address: venue.address,
+            area: venue.area,
+            charge: venue.charge,
+            cp_marketing: venue.cp_marketing,
+            harga_pack: venue.harga_pack,
+            lain_lain: venue.lain_lain,
+            no_cp: venue.no_cp,
+          },
+          spot: {
+            id_venue: venue.id,
+            spot_id: spot.spot_id,
+            spot_name: spot.spot_name,
+            kapasitas: spot.kapasitas,
+            indoor_outdoor: spot.indoor_outdoor,
+            kursi: spot.kursi,
+          },
+        });
+      });
+    });
+    // console.log(response)
   } catch (error) {
     console.error("Error fetching data:", error);
     // If an error occurs, run an alternative request using Axios
     try {
       const axiosResponse = await offlineApi.get("/api/venues");
-      console.log(axiosResponse);
+      // console.log(axiosResponse);
       data.value = axiosResponse.data.data;
+      data.value.forEach((venue) => {
+        venue.spots.forEach((spot) => {
+          rows.value.push({
+            venue: {
+              id: venue.id,
+              nama_venue: venue.nama_venue,
+              address: venue.address,
+              area: venue.area,
+              charge: venue.charge,
+              cp_marketing: venue.cp_marketing,
+              harga_pack: venue.harga_pack,
+              lain_lain: venue.lain_lain,
+              no_cp: venue.no_cp,
+            },
+            spot: {
+              id_venue: venue.id,
+              spot_id: spot.spot_id,
+              spot_name: spot.spot_name,
+              kapasitas: spot.kapasitas,
+              indoor_outdoor: spot.indoor_outdoor,
+              kursi: spot.kursi,
+            },
+          });
+        });
+      });
       // Handle the response from Axios here
     } catch (axiosError) {
       console.error("Error fetching data with Axios:", axiosError);
@@ -28,66 +80,72 @@ const fetchData = async () => {
   }
 };
 
-
-const confirmDelete = (venueId, nama_venue) => {
+const confirmDelete = (spot_id, spot_name) => {
   const confirmed = window.confirm(
-    "Are you sure you want to delete this venue?"
+    "Are you sure you want to delete " + spot_name + spot_id + "?"
   );
-  console.log(confirmed); // Log the result of the confirmation
+  // console.log(confirmed); // Log the result of the confirmation
 
   if (confirmed) {
     // Proceed with the deletion by calling deleteVenue
-    deleteVenue(venueId, nama_venue);
+    deleteSpot(spot_id, spot_name);
   }
 };
 
-const deleteVenue = async (venueId, nama_venue) => {
+const deleteSpot = async (spot_id, spot_name) => {
   try {
-    const response = await api.delete(`/api/venues/${venueId}`);
+    const response = await api.delete(`/api/spots/${spot_id}`);
 
     if (response.status === 200) {
-      window.alert(nama_venue + " Deleted");
-      const updatedData = data.value.filter((venue) => venue.id !== venueId);
-      data.value = updatedData;
+      window.alert(spot_name + " Deleted");
+      const updatedData = rows.value.filter(
+        (item) => item.spot.spot_id !== spot_id
+      );
+      console.log();
+      rows.value = updatedData;
     } else {
-      console.error("Error deleting venue:", response.statusText);
+      console.log("Error deleting spot:", response);
     }
   } catch (error) {
-    console.error("Error deleting venue:", error);
+    console.error("Error deleting spot:", error);
 
     // If an error occurs, run an alternative delete request using Axios
     try {
-      const axiosResponse = await offlineApi.delete(`/api/venues/${venueId}`);
+      const axiosResponse = await offlineApi.delete(`/api/spots/${spot_id}`);
       // Handle the Axios response here as needed
       if (axiosResponse.status === 200) {
-      window.alert(nama_venue + " Deleted");
-      const updatedData = data.value.filter((venue) => venue.id !== venueId);
-      data.value = updatedData;
-    } else {
-      console.error("Error deleting venue:", response.statusText);
-    }
+        window.alert(spot_name + " Deleted");
+        const updatedData = rows.value.filter(
+          (item) => item.spot.spot_id !== spot_id
+        );
+        rows.value = updatedData;
+      } else {
+        console.error("Error deleting spot:", response.statusText);
+      }
     } catch (axiosError) {
-      console.error("Error deleting venue with Axios:", axiosError);
+      console.error("Error deleting spot with Axios:", axiosError);
     }
   }
 };
-
 
 onMounted(fetchData);
 
 const filteredData = computed(() => {
-  return data.value.filter((item) => {
+  // Create an array of rows, one for each spot
+  return rows.value.filter((item) => {
     const kapasitasValue = kapasitasSelect.value;
     const kapasitasMatch =
       !kapasitasValue ||
-      checkKapasitasRange(item.spots[0].kapasitas, kapasitasValue);
+      checkKapasitasRange(item.spot.kapasitas, kapasitasValue);
     const inMatch =
-      !inSelect.value || item.spots[0].indoor_outdoor === inSelect.value;
-    const areaMatch = !areaSelect.value || item.area === areaSelect.value;
+      !inSelect.value || item.spot.indoor_outdoor === inSelect.value;
+    const areaMatch = !areaSelect.value || item.venue.area === areaSelect.value;
     const searchMatch =
       !searchText.value ||
-      item.nama_venue.toLowerCase().includes(searchText.value.toLowerCase()) ||
-      item.address.toLowerCase().includes(searchText.value.toLowerCase());
+      item.venue.nama_venue
+        .toLowerCase()
+        .includes(searchText.value.toLowerCase()) ||
+      item.venue.address.toLowerCase().includes(searchText.value.toLowerCase());
     return kapasitasMatch && inMatch && areaMatch && searchMatch;
   });
 });
@@ -182,7 +240,7 @@ const saveAsExcel = () => {
                 >Search by Name/Lokasi:</label
               >
               <input
-                type="text"
+                type="search"
                 class="form-control"
                 id="searchText"
                 v-model="searchText"
@@ -243,17 +301,17 @@ const saveAsExcel = () => {
                     :key="item.id"
                   >
                     <th scope="row" class="text-center">{{ index + 1 }}</th>
-                    <td>{{ item.nama_venue }}</td>
-                    <td>{{ item.address }}</td>
-                    <td class="text-center">{{ item.area }}</td>
+                    <td>{{ item.venue.nama_venue }}</td>
+                    <td>{{ item.venue.address }}</td>
+                    <td class="text-center">{{ item.venue.area }}</td>
                     <td class="text-center d-none d-md-table-cell">
-                      {{ item.spots[0].spot_name }}
+                      {{ item.spot.spot_name }}
                     </td>
                     <td class="text-center d-none d-md-table-cell">
-                      {{ item.spots[0].kapasitas }}
+                      {{ item.spot.kapasitas }}
                     </td>
                     <td class="text-center d-none d-md-table-cell">
-                      {{ item.spots[0].indoor_outdoor }}
+                      {{ item.spot.indoor_outdoor }}
                     </td>
                     <td class="text-center">
                       <div
@@ -262,14 +320,20 @@ const saveAsExcel = () => {
                         aria-label="Basic mixed styles"
                       >
                         <router-link
-                          :to="{ name: 'show', params: { id: item.id } }"
+                          :to="{ name: 'show', params: { id: item.venue.id } }"
                           tag="button"
                           class="btn btn-success btn-responsive"
                         >
                           <i class="fa-solid fa-eye fa-sm"></i>
                         </router-link>
                         <router-link
-                          :to="{ name: 'edit', params: { id: item.id } }"
+                          :to="{
+                            name: 'editSpot',
+                            params: {
+                              id: item.venue.id,
+                              idS: item.spot.spot_id,
+                            },
+                          }"
                           tag="button"
                           class="btn btn-warning btn-responsive"
                         >
@@ -278,7 +342,12 @@ const saveAsExcel = () => {
                         <button
                           type="button"
                           class="btn btn-danger btn-responsive"
-                          @click="confirmDelete(item.id, item.nama_venue)"
+                          @click="
+                            confirmDelete(
+                              item.spot.spot_id,
+                              item.spot.spot_name
+                            )
+                          "
                         >
                           <i class="fa-solid fa-xmark fa-sm"></i>
                         </button>

@@ -1,92 +1,101 @@
 <script setup>
-import { ref } from "vue";
-import { offlineApi, api } from "../api";
+import { ref, onMounted } from "vue";
+import { offlineApi, api } from "../../api";
 import { useRouter, useRoute } from "vue-router";
 
 const router = useRouter();
+const route = useRoute();
 
-let nama_venue = ref("");
-let cp_marketing = ref("");
-let no_cp = ref("");
-let address = ref("");
-let area = ref("-");
+const spot_name = ref("None");
+const kapasitas = ref(0);
+const indoor_outdoor = ref("-");
+const kursi = ref(0);
+const r_meeting = ref(0);
+const genset = ref(0);
+const sound_system = ref(0);
+const r_makeup = ref(0);
+const m_panggung = ref(0);
+const r_transit = ref(0);
+const listrik = ref(0);
+const other_fac = ref("");
+const halfday = ref(0);
+const fullday = ref(0);
+const other_harga = ref("");
+const errors = ref("");
 
-let total_spot = ref(0);
-let spot_name = ref("None");
-let kapasitas = ref(0);
-let indoor_outdoor = ref("");
-let kursi = ref(0);
-let r_meeting = ref(0);
-let genset = ref(0);
-let sound_system = ref(0);
-let r_makeup = ref(0);
-let m_panggung = ref(0);
-let r_transit = ref(0);
-let listrik = ref(0);
-let other_fac = ref("");
-let halfday = ref(0);
-let fullday = ref(0);
-let other_harga = ref("");
-
-let harga_pack = ref(0);
-let lain_lain = ref("");
-
-let charge = ref(0);
-
-let errors = ref("");
-
-const submitForm = async () => {
-  // Create a FormData object
+const updateForm = async () => {
   const formData = new FormData();
+  formData.append("spot[spot_name]", spot_name.value || "-");
+  formData.append("spot[kapasitas]", kapasitas.value || 0);
+  formData.append("spot[indoor_outdoor]", indoor_outdoor.value || "-");
+  formData.append("spot[kursi]", kursi.value || 0);
+  formData.append("spot[r_meeting]", r_meeting.value || 0);
+  formData.append("spot[genset]", genset.value || 0);
+  formData.append("spot[sound_system]", sound_system.value || 0);
+  formData.append("spot[r_makeup]", r_makeup.value || 0);
+  formData.append("spot[m_panggung]", m_panggung.value || 0);
+  formData.append("spot[r_transit]", r_transit.value || 0);
+  formData.append("spot[listrik]", listrik.value || 0);
+  formData.append("spot[other_fac]", other_fac.value || "");
+  formData.append("spot[halfday]", halfday.value || 0);
+  formData.append("spot[fullday]", fullday.value || 0);
+  formData.append("spot[other_harga]", other_harga.value || "");
 
-  // Append form data to the FormData object
-  formData.append("venue[nama_venue]", nama_venue.value || "-");
-  formData.append("venue[cp_marketing]", cp_marketing.value || "-");
-  formData.append("venue[no_cp]", no_cp.value || "-");
-  formData.append("venue[address]", address.value || "-");
-  formData.append("venue[area]", area.value || "-");
-  formData.append("venue[harga_pack]", harga_pack.value);
-  formData.append("venue[lain_lain]", lain_lain.value || "-");
-  formData.append("venue[charge]", charge.value);
-
-  // Append spot data to the FormData object
-  formData.append("spot[spot_name]", spot_name.value);
-  formData.append("spot[kapasitas]", kapasitas.value);
-  formData.append("spot[indoor_outdoor]", indoor_outdoor.value);
-  formData.append("spot[kursi]", kursi.value);
-  formData.append("spot[r_meeting]", r_meeting.value);
-  formData.append("spot[genset]", genset.value);
-  formData.append("spot[sound_system]", sound_system.value);
-  formData.append("spot[r_makeup]", r_makeup.value);
-  formData.append("spot[m_panggung]", m_panggung.value);
-  formData.append("spot[r_transit]", r_transit.value);
-  formData.append("spot[listrik]", listrik.value);
-  formData.append("spot[other_fac]", other_fac.value);
-  formData.append("spot[halfday]", halfday.value);
-  formData.append("spot[fullday]", fullday.value);
-  formData.append("spot[other_harga]", other_harga.value);
+  formData.append("_method", "PATCH");
 
   try {
-    // Store data with API
-    await api.post("/api/venues", formData);
-
-    // Redirect upon success
-    router.push({ path: "/" });
+    const response = await api.post(`/api/spots/${route.params.idS}`, formData);
+    router.push({ name: "show", params: { id: route.params.id } });
   } catch (error) {
-    // Assign response error data to state "errors"
     errors.value = error.response;
-
-    // If an error occurs, run an alternative post request using Axios
     try {
-      await offlineApi.post("/api/venues", formData);
-      // Redirect upon success
-      router.push({ path: "/" });
+      const axiosResponse = await offlineApi.post(`/api/spots/${route.params.idS}`, formData);
+      router.push({ name: "show", params: { id: route.params.id } });
     } catch (axiosError) {
       console.error("Error posting data with Axios:", axiosError);
     }
   }
 };
+
+const fetchData = async () => {
+  try {
+    const response = await api.get(`/api/spots/${route.params.idS}`);
+    const responseData = response.data.data;
+    assignValues(responseData);
+  } catch (error) {
+    console.error(error);
+    try {
+      const axiosResponse = await offlineApi.get(`/api/spots/${route.params.idS}`);
+      assignValues(axiosResponse.data.data);
+    } catch (axiosError) {
+      console.error("Error fetching data with Axios:", axiosError);
+    }
+  }
+};
+
+const assignValues = (data) => {
+  spot_name.value = data.spot_name || "None";
+  kapasitas.value = data.kapasitas || 0;
+  indoor_outdoor.value = data.indoor_outdoor || "-";
+  kursi.value = data.kursi || 0;
+  r_meeting.value = data.r_meeting || 0;
+  genset.value = data.genset || 0;
+  sound_system.value = data.sound_system || 0;
+  r_makeup.value = data.r_makeup || 0;
+  m_panggung.value = data.m_panggung || 0;
+  r_transit.value = data.r_transit || 0;
+  listrik.value = data.listrik || 0;
+  other_fac.value = data.other_fac || "";
+  halfday.value = data.halfday || 0;
+  fullday.value = data.fullday || 0;
+  other_harga.value = data.other_harga || "";
+};
+
+onMounted(() => {
+  fetchData();
+});
 </script>
+
 
 <template>
   <div class="container">
@@ -97,92 +106,11 @@ const submitForm = async () => {
           style="--bs-bg-opacity: 0.15"
         >
           <div class="card-body">
-            <form @submit.prevent="submitForm">
+            <form @submit.prevent="updateForm">
               <!-- Start of Venue Section -->
-              <h1>VENUE</h1>
-              <div class="col-lg-6">
-                <div class="mt-3 mb-3 row align-items-center">
-                  <label for="nama_venue" class="col-lg-3 col-form-label">
-                    <strong> Nama Venue </strong></label
-                  >
-                  <div class="col-lg-9">
-                    <input
-                      type="text"
-                      class="form-control"
-                      id="nama_venue"
-                      v-model="nama_venue"
-                      aria-describedby="nama_venueHelp"
-                      placeholder="Name Venue can't be empty"
-                      autocomplete="off"
-                      required
-                    />
-                  </div>
-                </div>
-                <div class="mb-3 row align-items-center">
-                  <label for="cp_marketing" class="col-lg-3 form-label"
-                    ><strong>CP Marketing</strong></label
-                  >
-                  <div class="col-lg-9">
-                    <input
-                      type="text"
-                      class="form-control"
-                      id="cp_marketing"
-                      v-model="cp_marketing"
-                      aria-describedby="cp_marketingHelp"
-                      autocomplete="off"
-                    />
-                  </div>
-                </div>
-                <div class="mb-3 row align-items-center">
-                  <label for="cp_marketing" class="col-lg-3 form-label"
-                    ><strong>No CP</strong></label
-                  >
-                  <div class="col-lg-9">
-                    <input
-                      type="text"
-                      class="form-control"
-                      id="no_cp"
-                      v-model="no_cp"
-                      aria-describedby="no_cpHelp"
-                      autocomplete="off"
-                    />
-                  </div>
-                </div>
-                <div class="mb-3 row align-items-center">
-                  <label for="address" class="col-lg-3 col-form-label">
-                    <strong> Address </strong></label
-                  >
-                  <div class="col-lg-9">
-                    <input
-                      type="text"
-                      class="form-control"
-                      id="address"
-                      v-model="address"
-                      aria-describedby="addressHelp"
-                      autocomplete="off"
-                    />
-                  </div>
-                </div>
-                <div class="mb-3 row align-items-center">
-                  <label for="area" class="col-lg-3 col-form-label">
-                    <strong> Area </strong></label
-                  >
-                  <div class="col-lg-9">
-                    <select class="form-select" id="area" v-model="area">
-                      <option value="Barat">Barat</option>
-                      <option value="Timur">Timur</option>
-                      <option value="Selatan">Selatan</option>
-                      <option value="Utara">Utara</option>
-                      <option value="Tengah">Tengah</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-              <!-- End of venue section -->
 
-              <h1 class="mt-5">FORM VISIT</h1>
               <div class="separator my-5">
-                <div class="text-bg fs-5 fw-bold">SPOT VENUE</div>
+                <div class="text-bg fs-5 fw-bold">EDIT SPOT VENUE</div>
               </div>
 
               <!-- Start of Spot Section -->
@@ -564,79 +492,6 @@ const submitForm = async () => {
                 </div>
               </div>
               <!-- End of Spot Section -->
-
-              <div class="separator my-5">
-                <div class="text-bg fs-5 fw-bold">KAMAR</div>
-              </div>
-
-              <!-- Start of Section Kamar -->
-              <div class="row my-3">
-                <div class="col-lg-8">
-                  <div class="row align-items-center">
-                    <div class="col-lg-2">
-                      <strong>Harga/Pack</strong>
-                    </div>
-                    <div class="col-1 d-none d-sm-block">:</div>
-                    <div class="col-lg-8">
-                      <input
-                        type="number"
-                        class="form-control"
-                        id="harga_pack"
-                        v-model="harga_pack"
-                        aria-describedby="harga_packHelp"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="row mb-3">
-                <div class="col-lg-8">
-                  <div class="row align-items-center">
-                    <div class="col-lg-3"></div>
-                    <div class="col-lg-2">
-                      <strong>Lain-Lain</strong>
-                    </div>
-                    <div class="col-lg-6">
-                      <input
-                        type="text"
-                        class="form-control"
-                        id="lain_lain"
-                        v-model="lain_lain"
-                        aria-describedby="lain_lainHelp"
-                        autocomplete="off"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <!-- End of Section Kamar -->
-
-              <div class="separator my-5">
-                <div class="text-bg fs-5 fw-bold">CHARGE</div>
-              </div>
-
-              <!-- Start of Section Charge -->
-              <div class="row mt-3 my-5">
-                <div class="col-lg-8">
-                  <div class="row align-items-center">
-                    <div class="col-lg-2">
-                      <strong>Charge</strong>
-                    </div>
-                    <div class="col-1 d-none d-sm-block">:</div>
-                    <div class="col-lg-8">
-                      <input
-                        type="number"
-                        class="form-control"
-                        id="charge"
-                        v-model="charge"
-                        aria-describedby="chargeHelp"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <!-- End of Section Charge -->
-
               <div class="row justify-content-end">
                 <div class="col-lg-2">
                   <button type="submit" class="btn btn-primary fs-3">
@@ -652,10 +507,4 @@ const submitForm = async () => {
   </div>
 </template>
 
-<style>
-@media screen and (max-width: 768px) {
-  .fasilitasClass {
-    float: right !important;
-  }
-}
-</style>
+<style></style>

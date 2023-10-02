@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\api;
 
 use App\Models\Spot;
+use App\Models\Image;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\DataResource;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class SpotController extends Controller
@@ -37,11 +39,23 @@ class SpotController extends Controller
             return new DataResource(false, 'Spot not found.', $spot);
         }
 
+        $start = Storage::deleteDirectory('public/img/' . $spot->id_venue . '/' . $spot->spot_id);
+
+        // Get all images associated with venue id 1
+        $images = Image::where('spot_id', $id)->get();
+
+        // Loop through the images and delete each one
+        foreach ($images as $image) {
+
+            // Update the associated Spot records where id_venue matches $id
+            $image = Image::where('spot_id', $id)->delete();
+        }
+
         // Delete the associated spots first
         $spot = Spot::where('spot_id', $id)->delete();
 
         // Return a response indicating success
-        return new DataResource(true, 'Spot removed successfully.', $spot);
+        return new DataResource(true, 'Spot removed successfully.', $start);
     }
 
     public function show($id)

@@ -9,10 +9,11 @@ import spotCard from "./spotCard/spotCard.vue";
 const route = useRoute();
 const router = useRouter();
 const data = ref({});
-const images = ref({});
+const images = ref([]);
 const columns = ref([]);
 const loading = ref(true);
-const selectedSpotIndex = ref(0);
+let selectedSpotIndex = ref();
+let selectedSpotName = ref();
 
 let id_venue = ref(route.params.id);
 let image = ref("");
@@ -21,10 +22,6 @@ let errors = ref([]);
 let activeVenueId = ref();
 
 let includeBackground = ref(false);
-
-onMounted(() => {
-  fetchData();
-});
 
 const fetchData = async () => {
   try {
@@ -50,6 +47,7 @@ const fetchData = async () => {
         images.value = axiosResponse2.data.data.images;
         columns.value = chunkArray(images.value, 3);
         loading.value = false;
+        console.log(selectedSpotIndex.value);
       } else {
         console.error("No image data found in the offline response.");
       }
@@ -57,8 +55,6 @@ const fetchData = async () => {
       console.error("Error fetching data with Axios:", axiosError);
     }
   }
-
-  console.log(data.value.spots[0]);
 };
 
 const confirmDelete = (id, nama_venue) => {
@@ -85,7 +81,7 @@ const deleteVenue = async (id, nama_venue) => {
     try {
       const axiosResponse = await offlineApi.delete(`/api/venues/${id}`);
       // Redirect upon success
-    router.push({ path: "/" });
+      router.push({ path: "/" });
       // Handle the Axios response here as needed
     } catch (axiosError) {
       console.error("Error deleting spot with Axios:", axiosError);
@@ -95,7 +91,6 @@ const deleteVenue = async (id, nama_venue) => {
 
 const generatePDF = async () => {
   includeBackground.value = true;
-  console.log(includeBackground.value);
   html2pdf(document.getElementById("pdf-content"), {
     filename: "my-document.pdf",
     margin: 1,
@@ -138,9 +133,12 @@ const formatPhoneNumber = (phoneNumber) => {
   return phoneNumber;
 };
 
-const selectSpot = (index) => {
-  selectedSpotIndex.value = index;
-  console.log(selectedSpotIndex.value);
+const selectSpot = (spot_id, spot_name) => {
+  selectedSpotIndex.value = spot_id;
+  selectedSpotName.value = spot_name;
+  console.log(selectedSpotName.value);
+  columns.value = [];
+  columns.value = chunkArray(filteredImage.value, 3);
 };
 
 const handleFileChange = (e) => {
@@ -151,16 +149,27 @@ const storePost = async () => {
   let formData2 = new FormData();
   formData2.append("image", image.value);
   formData2.append("id_venue", id_venue.value);
+  formData2.append("spot_id", selectedSpotIndex.value);
+  formData2.append("spot_name", selectedSpotName.value);
+  formData2.append("nama_venue", data.value.nama_venue);
+
+  //   formData2.forEach((value, key) => {
+  //   console.log(key, value);
+  // });
+
   try {
     const response3 = await api.post("/api/images", formData2);
-    const image_url = response3.data.data.image;
+    const dt = response3.data.data;
+    console.log(dt);
     const newImage = {
-      id_venue: id_venue.value,
-      image: image_url,
+      id_venue: dt.id_venue,
+      id_image: dt.id,
+      image: dt.image,
+      spot_id: dt.spot_id,
     };
     images.value.push(newImage);
     columns.value = [];
-    columns.value = chunkArray(images.value, 3);
+    columns.value = chunkArray(filteredImage.value, 3);
   } catch (error) {
     errors.value = error.response;
 
@@ -168,14 +177,17 @@ const storePost = async () => {
     try {
       const axiosResponse = await offlineApi.post("/api/images", formData2);
       // Handle the Axios response here as needed
-      const image_url = axiosResponse.data.data.image;
+      const dt = axiosResponse.data.data;
+      console.log(dt);
       const newImage = {
-        id_venue: id_venue.value,
-        image: image_url,
+        id_venue: dt.id_venue,
+        id_image: dt.id,
+        image: dt.image,
+        spot_id: dt.spot_id,
       };
       images.value.push(newImage);
       columns.value = [];
-      columns.value = chunkArray(images.value, 3);
+      columns.value = chunkArray(filteredImage.value, 3);
     } catch (axiosError) {
       console.error("Error posting image with Axios:", axiosError);
     }
@@ -190,7 +202,7 @@ const delImage = async (id) => {
       const updatedData = images.value.filter((image) => image.id_image !== id);
       images.value = updatedData;
       columns.value = [];
-      columns.value = chunkArray(images.value, 3);
+      columns.value = chunkArray(filteredImage.value, 3);
       console.log(response4);
     } else {
       console.error("Error deleting image:", response4.statusText);
@@ -208,7 +220,7 @@ const delImage = async (id) => {
         );
         images.value = updatedData;
         columns.value = [];
-        columns.value = chunkArray(images.value, 3);
+        columns.value = chunkArray(filteredImage.value, 3);
         console.log(response4);
       } else {
         console.error("Error deleting image:", response4.statusText);
@@ -219,6 +231,21 @@ const delImage = async (id) => {
     }
   }
 };
+
+const filteredImage = computed(() => {
+  // Create an array of rows, one for each spot
+  return images.value.filter((item) => {
+    const imageMatch =
+      selectedSpotIndex.value === null ||
+      item.spot_id == selectedSpotIndex.value;
+    // console.log(item);
+    console.log(
+      `Item ${item.id_image}:  ${item.spot_id} = ${selectedSpotIndex.value}`,
+      imageMatch
+    );
+    return imageMatch;
+  });
+});
 
 const chunkArray = (array, chunkCount) => {
   const chunkedArray = Array.from({ length: chunkCount }, () => []);
@@ -233,6 +260,13 @@ const chunkArray = (array, chunkCount) => {
 
 const showCarousel = (index_img) => {
   activeVenueId.value = index_img;
+  // console.log(filteredImage.value);
+  // console.log(images.value);
+  filteredImage.value.forEach((item, index) => {
+    // Inside the callback function, you can access each item and its index.
+    console.log(item, index);
+  });
+
   const modal = document.getElementById("carouselModal");
   const modalBackdrop = document.querySelector(".modal-backdrop");
   modal.style.display = "block";
@@ -246,6 +280,10 @@ const closeCarousel = () => {
   modalBackdrop.style.display = "none";
   activeVenueId.value = null;
 };
+
+onMounted(() => {
+  fetchData();
+});
 </script>
 
 <template>
@@ -254,6 +292,13 @@ const closeCarousel = () => {
       <div class="col-md-12">
         <h1 class="text-center my-3">Detail Venue</h1>
         <div class="d-flex justify-content-end my-2">
+          <router-link
+            :to="{ name: 'edit', params: { id: data.id } }"
+            tag="button"
+            class="btn btn-primary btn-responsive"
+          >
+            Edit Venue
+          </router-link>
           <router-link
             :to="{ name: 'addSpot', params: { id: data.id } }"
             tag="button"
@@ -321,13 +366,17 @@ const closeCarousel = () => {
                 <div
                   v-for="(spot, index) in data.spots"
                   :key="spot.spot_id"
-                  @click="selectSpot(spot.spot_id)"
+                  @click="selectSpot(spot.spot_id, spot.spot_name)"
                   class="p-2 tagSelect mb-3 text-center align-middle"
                   :class="{ active_spot: spot.spot_id == selectedSpotIndex }"
-                  style="cursor: pointer; display: flex; flex-direction: column; align-items: center;"
- 
+                  style="
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                  "
                 >
-                <span>{{ spot.spot_name }}</span>
+                  <span>{{ spot.spot_name }}</span>
                 </div>
               </div>
 
@@ -405,13 +454,6 @@ const closeCarousel = () => {
       >
         Generate PDF
       </button>
-      <router-link
-        :to="{ name: 'edit', params: { id: data.id } }"
-        tag="button"
-        class="btn btn-warning btn-responsive mx-2"
-      >
-        EDIT
-      </router-link>
     </div>
     <div
       class="card bg-dark border-0 rounded shadow text-white mb-5"
@@ -419,7 +461,42 @@ const closeCarousel = () => {
     >
       <div class="card-body">
         <h1 class="text-center">Image</h1>
-        <form @submit.prevent="storePost()">
+        <div class="d-flex gap-2 justify-content-center">
+          <div
+            @click="selectSpot(0, 'Home')"
+            class="p-2 tagSelect mb-3 text-center align-middle"
+            :class="{ active_spot: 0 == selectedSpotIndex }"
+            style="
+              cursor: pointer;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+            "
+          >
+            Venue
+          </div>
+          <div
+            v-for="(spot, index) in data.spots"
+            :key="spot.spot_id"
+            @click="selectSpot(spot.spot_id, spot.spot_name)"
+            class="p-2 tagSelect mb-3 text-center align-middle"
+            :class="{ active_spot: spot.spot_id == selectedSpotIndex }"
+            style="
+              cursor: pointer;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+            "
+          >
+            <span>{{ spot.spot_name }}</span>
+          </div>
+        </div>
+        <form
+          @submit.prevent="storePost()"
+          v-show="
+            typeof selectedSpotIndex !== 'undefined' && selectedSpotIndex !== ''
+          "
+        >
           <div class="col-lg-3 mb-3">
             <label class="form-label fw-bold">Image</label>
             <input
@@ -438,7 +515,7 @@ const closeCarousel = () => {
         </form>
         <div class="image-gallery mt-5">
           <div
-            class="column"
+            class="column col-lg-4"
             v-for="(column, columnIndex) in columns"
             :key="columnIndex"
           >
@@ -485,9 +562,9 @@ const closeCarousel = () => {
               <div class="carousel-inner">
                 <div
                   class="carousel-item"
-                  v-for="(item, index) in images"
-                  :class="{ active_spot: item.id_image == activeVenueId }"
-                  :key="index"
+                  v-for="(item, index) in filteredImage"
+                  :class="{ active: item.id_image == activeVenueId }"
+                  :key="item.id_image"
                 >
                   <img :src="item.image" class="d-block w-100" alt="..." />
                 </div>
@@ -642,6 +719,8 @@ const closeCarousel = () => {
     background-repeat: no-repeat;
     background-size: cover;
     border-radius: 10px;
+    background-attachment: fixed;
+    background-blend-mode: difference;
   }
 }
 </style>

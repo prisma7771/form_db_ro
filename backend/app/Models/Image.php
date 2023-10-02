@@ -13,7 +13,8 @@ class Image extends Model
 
     protected $fillable = [
         'id_venue',
-        'image'
+        'image',
+        'spot_id'
     ];
 
     public function venue()
@@ -24,7 +25,7 @@ class Image extends Model
     protected function image(): Attribute
     {
         return Attribute::make(
-            get: fn ($image) => url('/storage/posts/' . $image),
+            get: fn ($image) => url('/storage/img/' . $image),
         );
     }
     

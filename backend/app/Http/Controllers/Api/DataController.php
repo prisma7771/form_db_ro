@@ -87,11 +87,11 @@ class DataController extends Controller
         // Get all images associated with venue id 1
         $images = Image::where('id_venue', $id)->get();
 
+        // Delete the entire directory along with its contents
+        $start = Storage::deleteDirectory('public/img/' . $id); 
+
         // Loop through the images and delete each one
         foreach ($images as $image) {
-            // Delete the image file
-            Storage::delete('public/posts/' . basename($image->image));
-
             // Update the associated Spot records where id_venue matches $id
             $image = Image::where('id_venue', $id)->delete();
         }

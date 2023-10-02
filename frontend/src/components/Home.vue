@@ -128,7 +128,6 @@ const deleteSpot = async (spot_id, spot_name) => {
   }
 };
 
-onMounted(fetchData);
 
 const filteredData = computed(() => {
   // Create an array of rows, one for each spot
@@ -150,7 +149,7 @@ const filteredData = computed(() => {
   });
 });
 
-function checkKapasitasRange(kapasitas, range) {
+const checkKapasitasRange = (kapasitas, range) => {
   if (range === ">1000") {
     return kapasitas > 1000;
   }
@@ -180,6 +179,9 @@ const saveAsExcel = () => {
   XLSX.utils.book_append_sheet(wb, ws, "Venue Data");
   XLSX.writeFile(wb, "venue_data.xlsx");
 };
+
+onMounted(fetchData);
+
 </script>
 
 <template>

@@ -72,10 +72,10 @@ const submitForm = async () => {
   formData.append("m_panggung", m_panggung.value);
   formData.append("r_transit", r_transit.value);
   formData.append("listrik", listrik.value);
-  formData.append("other_fac", other_fac.value);
+  formData.append("other_fac", other_fac.value || "-");
   formData.append("halfday", halfday.value);
   formData.append("fullday", fullday.value);
-  formData.append("other_harga", other_harga.value);
+  formData.append("other_harga", other_harga.value || "-");
 
   try {
     // Store data with API

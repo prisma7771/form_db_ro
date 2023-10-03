@@ -288,9 +288,9 @@ onMounted(() => {
 
 <template>
   <div class="container">
-    <div class="row pdf-bg" id="pdf-content">
+    <div class="row" >
       <div class="col-md-12">
-        <h1 class="text-center my-3">Detail Venue</h1>
+        <h1 class="text-center my-5">Detail Venue</h1>
         <div class="d-flex justify-content-end my-2">
           <router-link
             :to="{ name: 'edit', params: { id: data.id } }"
@@ -315,8 +315,9 @@ onMounted(() => {
           </button>
         </div>
         <div
-          class="card bg-dark border-0 rounded shadow text-white mb-3"
-          style="--bs-bg-opacity: 0.25"
+          class="card border-0 rounded shadow text-white mb-3 pdf-bg"
+          id="pdf-content"
+          style="filter: brightness(0.9);"
         >
           <div class="card-body">
             <div v-if="loading">Loading...</div>
@@ -357,7 +358,7 @@ onMounted(() => {
                   </div>
                 </div>
               </section>
-              <div class="separator my-5">
+              <div class="separator mt-5">
                 <div class="text-bg fs-3 fw-bold">SPOT VENUE</div>
               </div>
               <!-- Start of Section Spot -->
@@ -367,7 +368,7 @@ onMounted(() => {
                   v-for="(spot, index) in data.spots"
                   :key="spot.spot_id"
                   @click="selectSpot(spot.spot_id, spot.spot_name)"
-                  class="p-2 tagSelect mb-3 text-center align-middle"
+                  class="p-2 tagSelect my-5 text-center align-middle"
                   :class="{ active_spot: spot.spot_id == selectedSpotIndex }"
                   style="
                     cursor: pointer;
@@ -615,7 +616,13 @@ onMounted(() => {
 
 .pdf-bg {
   font-family: "Quicksand", sans-serif;
-}
+    background-image: url("../../public/assets/bg_to_prisma-04.png");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    border-radius: 10px;
+    background-attachment: fixed;
+  }
 
 .modal-backdrop {
   position: fixed;
@@ -713,14 +720,5 @@ onMounted(() => {
     flex-direction: row;
   }
 
-  .pdf-bg {
-    background-image: url("../../public/assets/bg_to_prisma-04.png");
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: cover;
-    border-radius: 10px;
-    background-attachment: fixed;
-    background-blend-mode: difference;
-  }
 }
 </style>

@@ -12,7 +12,7 @@ let address = ref("");
 let area = ref("-");
 
 let total_spot = ref(0);
-let spot_name = ref("None");
+let spot_name = ref("");
 let kapasitas = ref(0);
 let indoor_outdoor = ref("");
 let kursi = ref(0);
@@ -50,9 +50,9 @@ const submitForm = async () => {
   formData.append("venue[charge]", charge.value);
 
   // Append spot data to the FormData object
-  formData.append("spot[spot_name]", spot_name.value);
+  formData.append("spot[spot_name]", spot_name.value || "None");
   formData.append("spot[kapasitas]", kapasitas.value);
-  formData.append("spot[indoor_outdoor]", indoor_outdoor.value);
+  formData.append("spot[indoor_outdoor]", indoor_outdoor.value || "-");
   formData.append("spot[kursi]", kursi.value);
   formData.append("spot[r_meeting]", r_meeting.value);
   formData.append("spot[genset]", genset.value);
@@ -61,10 +61,10 @@ const submitForm = async () => {
   formData.append("spot[m_panggung]", m_panggung.value);
   formData.append("spot[r_transit]", r_transit.value);
   formData.append("spot[listrik]", listrik.value);
-  formData.append("spot[other_fac]", other_fac.value);
+  formData.append("spot[other_fac]", other_fac.value || "-");
   formData.append("spot[halfday]", halfday.value);
   formData.append("spot[fullday]", fullday.value);
-  formData.append("spot[other_harga]", other_harga.value);
+  formData.append("spot[other_harga]", other_harga.value || "-");
 
   try {
     // Store data with API
@@ -507,6 +507,7 @@ const submitForm = async () => {
                         <input
                           type="number"
                           class="form-control"
+                          max=9999999999
                           id="halfday"
                           v-model="halfday"
                           aria-describedby="halfdayHelp"

@@ -6,7 +6,7 @@ import { useRouter, useRoute } from "vue-router";
 const router = useRouter();
 const route = useRoute();
 
-const spot_name = ref("None");
+const spot_name = ref("");
 const kapasitas = ref(0);
 const indoor_outdoor = ref("-");
 const kursi = ref(0);
@@ -25,7 +25,7 @@ const errors = ref("");
 
 const updateForm = async () => {
   const formData = new FormData();
-  formData.append("spot[spot_name]", spot_name.value || "-");
+  formData.append("spot[spot_name]", spot_name.value || "None");
   formData.append("spot[kapasitas]", kapasitas.value || 0);
   formData.append("spot[indoor_outdoor]", indoor_outdoor.value || "-");
   formData.append("spot[kursi]", kursi.value || 0);
@@ -36,10 +36,10 @@ const updateForm = async () => {
   formData.append("spot[m_panggung]", m_panggung.value || 0);
   formData.append("spot[r_transit]", r_transit.value || 0);
   formData.append("spot[listrik]", listrik.value || 0);
-  formData.append("spot[other_fac]", other_fac.value || "");
+  formData.append("spot[other_fac]", other_fac.value || "-");
   formData.append("spot[halfday]", halfday.value || 0);
   formData.append("spot[fullday]", fullday.value || 0);
-  formData.append("spot[other_harga]", other_harga.value || "");
+  formData.append("spot[other_harga]", other_harga.value || "-");
 
   formData.append("_method", "PATCH");
 
@@ -74,7 +74,7 @@ const fetchData = async () => {
 };
 
 const assignValues = (data) => {
-  spot_name.value = data.spot_name || "None";
+  spot_name.value = data.spot_name || "-";
   kapasitas.value = data.kapasitas || 0;
   indoor_outdoor.value = data.indoor_outdoor || "-";
   kursi.value = data.kursi || 0;

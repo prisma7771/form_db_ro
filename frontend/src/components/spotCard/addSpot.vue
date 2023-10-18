@@ -61,9 +61,9 @@ const submitForm = async () => {
 
   // Append data to the FormData object
   formData.append("id_venue", route.params.id);
-  formData.append("spot_name", spot_name.value);
+  formData.append("spot_name", spot_name.value) || "None";
   formData.append("kapasitas", kapasitas.value);
-  formData.append("indoor_outdoor", indoor_outdoor.value);
+  formData.append("indoor_outdoor", indoor_outdoor.value || "-");
   formData.append("kursi", kursi.value);
   formData.append("r_meeting", r_meeting.value);
   formData.append("genset", genset.value);

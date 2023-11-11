@@ -1,0 +1,3 @@
+XAMPP_PATH=E:\Programming\xampp
+BACKEND_PATH=E:\Programming\Web\Vue\form_input\backend
+FRONTEND_PATH=E:\Programming\Web\Vue\form_input\frontend
